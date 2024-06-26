@@ -62,19 +62,17 @@ def translate_text(text, src_lang, tgt_lang):
         logger.error(f"Translation error: {e}")
         return None
 
-def find_most_similar_labels(user_input, embeddings, labels, top_k=5):
+def find_most_similar_labels(user_input, embeddings, labels, tgt_lang, top_k=5):
     user_embedding = get_embedding(user_input)
     similarities = cosine_similarity(user_embedding, embeddings)[0]
     indices = similarities.argsort()[::-1][:top_k]
     
     results = []
     for idx in indices:
-        label_eng = labels[idx]
-        label_arb = translate_text(label_eng, src_lang="eng", tgt_lang="arb") or "Translation failed"
-        
+        label = labels[idx]
+        translated_label = translate_text(label, src_lang="eng", tgt_lang=tgt_lang)
         results.append({
-            "label_eng": label_eng,
-            "label_arb": label_arb,
+            "label": translated_label if translated_label else label,
             "similarity": float(similarities[idx])
         })
     
