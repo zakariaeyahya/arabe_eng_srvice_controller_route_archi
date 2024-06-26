@@ -1,42 +1,54 @@
 import streamlit as st
 import requests
-import json  # Assurez-vous d'importer le module json
+import json
 
-# Titre de l'application
-st.title("Traduction Darija <-> Anglais avec Similarité")
+# Title of the application
+st.title("Traduction et Similarité entre Français, Anglais et Arabe")
 
-# Zone de texte pour l'entrée utilisateur en Darija
-input_text = st.text_area("Entrez le texte en Darija :", "")
+# Language options
+language_options = {
+    "fra": "Français",
+    "eng": "Anglais",
+    "arb": "Arabe"
+}
 
-# Bouton pour déclencher la traduction et la recherche de similarités
+# Source language dropdown
+src_lang = st.selectbox("Langue source :", options=list(language_options.keys()), format_func=lambda x: language_options[x])
+
+# Target language dropdown
+tgt_lang = st.selectbox("Langue cible :", options=list(language_options.keys()), format_func=lambda x: language_options[x])
+
+# Text area for user input
+input_text = st.text_area("Entrez le texte :", "")
+
+# Button to trigger translation and similarity search
 if st.button("Traduire et Trouver des Similitudes"):
     if input_text:
         try:
-            # Envoi de la requête POST à l'API FastAPI
+            # Sending POST request to FastAPI with selected language options
             response = requests.post(
                 "http://localhost:8000/predict/",
-                json={"text": input_text},
+                json={"text": input_text,"src_lang": src_lang, "tgt_lang": tgt_lang},  # Adjusted to remove src_lang
                 headers={"Content-Type": "application/json"}
             )
-            response.raise_for_status()  # Gère les erreurs HTTP
-
-            result = response.json()  # Récupère les résultats au format JSON
-
-            # Affichage du texte original et traduit
+            response.raise_for_status()  # Handling HTTP errors
+            
+            result = response.json()  # Retrieving results in JSON format
+            
+            # Displaying original and translated text
             if "user_text" in result:
-                st.write("Texte original (Darija) :", result["user_text"])
+                st.write(f"Texte original ({language_options[src_lang]}) :", result["user_text"])
             if "translated_text" in result:
-                st.write("Texte traduit (Anglais) :", result["translated_text"])
-
-            # Affichage des résultats de similarité
+                st.write(f"Texte traduit ({language_options[tgt_lang]}) :", result["translated_text"])
+            
+            # Displaying similarity results
             if "results" in result and isinstance(result["results"], list):
-                st.subheader("Similitudes :")
+                st.subheader(f"Similitudes ({language_options[tgt_lang]}) :")
                 for idx, res in enumerate(result["results"], 1):
-                    st.write(f"{idx}. Étiquette : {res.get('label_arb', 'N/A')}")
+                    st.write(f"{idx}. Étiquette : {res.get('label', 'N/A')}")
                     st.write(f"   Similarité : {res.get('similarity', 'N/A')}")
-                    st.write(f"   Version anglaise : {res.get('label_eng', 'N/A')}")
                     st.write("---")
-
+        
         except requests.exceptions.RequestException as e:
             st.error(f"Erreur de connexion au serveur : {e}")
         except json.JSONDecodeError:
@@ -44,4 +56,4 @@ if st.button("Traduire et Trouver des Similitudes"):
         except Exception as e:
             st.error(f"Une erreur inattendue s'est produite : {e}")
     else:
-        st.warning("Veuillez entrer du texte en Darija.")
+        st.warning("Veuillez entrer du texte.")
