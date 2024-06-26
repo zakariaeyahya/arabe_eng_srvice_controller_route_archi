@@ -16,9 +16,9 @@ Transformers (Hugging Face), Sentence Transformers
 Pandas, scikit-learn
 Comment Utiliser
 Prérequis : Assurez-vous d'avoir Python installé.
-## Installation des dépendances : Utilisez pip install -r requirements.txt pour installer toutes les bibliothèques requises.
+Installation des dépendances : Utilisez pip install -r requirements.txt pour installer toutes les bibliothèques requises.
 ## Lancer l'application :
-Exécutez uvicorn app:app --reload pour démarrer l'API FastAPI.
+Exécutez uvicorn route:app --reload pour démarrer l'API FastAPI.
 Exécutez streamlit run app.py pour démarrer l'application Streamlit.
 ## Interface Utilisateur :
 Sélectionnez la langue source et la langue cible.
@@ -29,5 +29,5 @@ Endpoints API :
 Contributions et Support
 Pour contribuer ou signaler des problèmes, veuillez ouvrir une issue sur GitHub.
 
-Auteurs:
+## Auteurs:
 yahya zakariae
