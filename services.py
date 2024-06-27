@@ -5,6 +5,7 @@ import re
 import torch
 from sklearn.metrics.pairwise import cosine_similarity
 import logging
+from fastapi import HTTPException
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -94,3 +95,16 @@ def load_embeddings_and_labels():
     except Exception as e:
         logger.error(f"Error loading embeddings or Excel file: {str(e)}")
         raise RuntimeError(f"Error loading embeddings or Excel file: {str(e)}")
+# services/stats_service.py
+
+
+def get_stats(data_list):
+    try:
+        total_requests = len(data_list)
+        languages_used = set(item["src_lang"] for item in data_list) | set(item["tgt_lang"] for item in data_list)
+        return {
+            "total_requests": total_requests,
+            "languages_used": list(languages_used)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
