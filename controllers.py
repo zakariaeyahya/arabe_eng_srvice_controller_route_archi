@@ -22,7 +22,6 @@ class TextRequest(BaseModel):
 
 data_list = []
 
-@app.post("/predict/")
 def predict(request: TextRequest):
     try:
         user_text = request.text
@@ -55,8 +54,6 @@ def predict(request: TextRequest):
         logger.error(f"Erreur dans la fonction predict : {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@app.get("/download-data/")
 def download_data():
     try:
         with open("data.json", "w") as json_file:
@@ -68,5 +65,22 @@ def download_data():
         logger.error(f"Erreur lors du téléchargement des données : {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
- 
+def clear_history():
+    global data_list
+    data_list.clear()
+    return {"message": "Historique effacé avec succès"}
 
+def get_recent_predictions(limit: int = 5):
+    return {"recent_predictions": data_list[-limit:]}
+def get_last_prediction():
+    if data_list:
+        return {"last_prediction": data_list[-1]}
+    else:
+        return {"message": "Aucune prédiction n'a été faite"}
+def get_stats():
+    total_requests = len(data_list)
+    languages_used = set(item["src_lang"] for item in data_list) | set(item["tgt_lang"] for item in data_list)
+    return {
+        "total_requests": total_requests,
+        "languages_used": list(languages_used)
+    }
