@@ -2,26 +2,19 @@ import streamlit as st
 import requests
 import json
 
-# Titre de l'application
 st.title("Traduction et Similarité entre Français, Anglais et Arabe")
 
-# Options de langue
 language_options = {
     "fra": "Français",
     "eng": "Anglais",
     "arb": "Arabe"
 }
 
-# Sélection de la langue source
 src_lang = st.selectbox("Langue source :", options=list(language_options.keys()), format_func=lambda x: language_options[x])
-
-# Sélection de la langue cible
 tgt_lang = st.selectbox("Langue cible :", options=list(language_options.keys()), format_func=lambda x: language_options[x])
 
-# Zone de texte pour l'entrée utilisateur
 input_text = st.text_area("Entrez le texte :", "")
 
-# Bouton pour déclencher la traduction et la recherche de similarité
 if st.button("Traduire et Trouver des Similitudes"):
     if input_text:
         try:
@@ -40,10 +33,13 @@ if st.button("Traduire et Trouver des Similitudes"):
                 st.write(f"Texte traduit ({language_options[tgt_lang]}) :", result["translated_text"])
             
             if "results" in result and isinstance(result["results"], list):
-                st.subheader(f"Similitudes ({language_options[tgt_lang]}) :")
+                st.subheader(f"Similitudes ({language_options[src_lang]}) :")
                 for idx, res in enumerate(result["results"], 1):
-                    st.write(f"{idx}. Étiquette : {res.get('label', 'N/A')}")
-                    st.write(f"   Similarité : {res.get('similarity', 'N/A')}")
+                    label = res.get("label", "N/A")
+                    similarity = res.get("similarity", "N/A")
+                    
+                    st.write(f"{idx}. Étiquette : {label}")
+                    st.write(f"   Similarité : {similarity}")
                     st.write("---")
         
         except requests.exceptions.RequestException as e:
