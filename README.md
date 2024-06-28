@@ -1,33 +1,42 @@
 
-# Projet Traduction et Similarité
-## Description
-Ce projet permet de traduire du texte entre le Français, l'Anglais et l'Arabe, tout en trouvant des similarités basées sur des embeddings sémantiques.
+# Projet de Traduction et Similarité
+Ce projet vise à développer une application de traduction et de recherche de similarité entre textes, utilisant des modèles de transformation de phrases et des techniques de traitement du langage naturel (NLP). L'application est construite avec FastAPI pour le backend et Streamlit pour l'interface utilisateur.
 
 ## Fonctionnalités
-Traduction : Traduit le texte d'une langue source vers une langue cible sélectionnée.
-Recherche de Similarités : Trouve les étiquettes les plus similaires à partir de l'embedding du texte traduit.
-Composants Principaux
-Application Web (Streamlit) : Interface utilisateur pour entrer du texte et visualiser les résultats de traduction et de similarité.
-API (FastAPI) : Endpoint pour gérer les requêtes de traduction et de similarité.
-Modèles NLP : Utilisation de Sentence Transformers pour l'encodage de texte et de modèles Seq2Seq pour la traduction.
-## Technologies Utilisées
-Python, FastAPI, Streamlit
-Transformers (Hugging Face), Sentence Transformers
-Pandas, scikit-learn
-Comment Utiliser
-Prérequis : Assurez-vous d'avoir Python installé.
-Installation des dépendances : Utilisez pip install -r requirements.txt pour installer toutes les bibliothèques requises.
-## Lancer l'application :
-Exécutez uvicorn route:app --reload pour démarrer l'API FastAPI.
-Exécutez streamlit run app.py pour démarrer l'application Streamlit.
-## Interface Utilisateur :
-Sélectionnez la langue source et la langue cible.
-Entrez du texte à traduire et recherchez des similitudes.
-Endpoints API :
-/predict/ : Endpoint POST pour la traduction et la recherche de similarités.
-/download-data/ : Endpoint GET pour télécharger les données collectées au format JSON.
-Contributions et Support
-Pour contribuer ou signaler des problèmes, veuillez ouvrir une issue sur GitHub.
+Traduction : Traduit le texte d'une langue source à une langue cible à l'aide du modèle Seamless Translator.
+Recherche de Similarité : Identifie les étiquettes les plus similaires au texte de l'utilisateur en utilisant des embeddings et la similarité cosinus.
+Interface Utilisateur : Interface utilisateur simple avec Streamlit pour interagir avec les fonctionnalités backend.
+## Architecture du Projet
+Le projet est structuré comme suit :
 
-## Auteurs:
-yahya zakariae
+app.py : Interface utilisateur avec Streamlit pour lancer les requêtes vers l'API FastAPI.
+routes.py : Définition des routes FastAPI pour gérer les requêtes de traduction et de similarité.
+controllers.py : Logique métier pour gérer les requêtes et appeler les fonctions de service.
+services.py : Fonctions de service pour la traduction, la recherche de similarité et la gestion des données.
+seamless_translator.py : Classe pour la traduction utilisant le modèle Seamless Translator.
+data.json : Fichier de données pour enregistrer l'historique des requêtes.
+results.json : Résultats formatés en JSON à partir des données d'entrée.
+testenco.py : Script pour encoder et enregistrer les résultats au format JSON.
+to_excel.py : Script pour convertir les résultats JSON en un fichier Excel structuré.
+## Prérequis
+Avant de démarrer, assurez-vous d'avoir les éléments suivants installés et configurés :
+
+Python 3.x
+Packages Python : fastapi, uvicorn, streamlit, pandas, sentence-transformers, transformers, torch, scikit-learn, etc.
+Accès à un GPU pour des performances améliorées lors de l'utilisation de modèles NLP complexes.
+
+## Utilisation
+Lancez le serveur FastAPI :
+Copy code
+uvicorn app:app --reload
+## Lancez l'interface utilisateur avec Streamlit :
+streamlit run app.py
+Accédez à l'application via votre navigateur à l'adresse : http://localhost:8501
+
+## Contribution
+Les contributions sont les bienvenues ! Pour des suggestions, des bugs ou des améliorations potentielles, veuillez ouvrir une issue ou soumettre une pull request.
+
+## Licence
+Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
+
+
