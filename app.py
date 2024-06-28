@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import json
+from urllib.parse import quote
 
 st.title("Traduction et Similarité entre Français, Anglais et Arabe")
 
@@ -18,14 +19,16 @@ input_text = st.text_area("Entrez le texte :", "")
 if st.button("Traduire et Trouver des Similitudes"):
     if input_text:
         try:
-            response = requests.post(
-                "http://localhost:8000/predict/",
-                json={"text": input_text, "src_lang": src_lang, "tgt_lang": tgt_lang},
-                headers={"Content-Type": "application/json"}
-            )
+            # Encoder le texte pour l'URL
+            encoded_text = quote(input_text)
+            
+            # Construire l'URL avec les paramètres
+            url = f"http://localhost:8000/predict/?text={encoded_text}&src_lang={src_lang}&tgt_lang={tgt_lang}"
+            
+            response = requests.get(url)
             response.raise_for_status()
             
-            result = json.loads(response.content.decode('utf-8'))
+            result = response.json()
             
             if "user_text" in result:
                 st.write(f"Texte original ({language_options[src_lang]}) :", result["user_text"])
@@ -39,7 +42,7 @@ if st.button("Traduire et Trouver des Similitudes"):
                     similarity = res.get("similarity", "N/A")
                     
                     st.write(f"{idx}. Étiquette : {label}")
-                    st.write(f"   Similarité : {similarity}")
+                    st.write(f"   Similarité : {similarity:.4f}")
                     st.write("---")
         
         except requests.exceptions.RequestException as e:
@@ -50,3 +53,5 @@ if st.button("Traduire et Trouver des Similitudes"):
             st.error(f"Une erreur inattendue s'est produite : {e}")
     else:
         st.warning("Veuillez entrer du texte.")
+
+ 
