@@ -1,9 +1,6 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import HTTPException
+from services import translate_text, find_most_similar_labels, load_embeddings_and_labels, download_data, clear_history, get_last_prediction, get_stats, get_supported_languages, data_list
 import logging
-from services import translate_text, find_most_similar_labels, load_embeddings_and_labels
-import json
-from fastapi.responses import FileResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,74 +10,84 @@ try:
 except Exception as e:
     raise RuntimeError("Erreur lors du chargement des embeddings ou du fichier Excel : " + str(e))
 
-app = FastAPI()
-
-class TextRequest(BaseModel):
-    text: str
-    src_lang: str
-    tgt_lang: str
-
-data_list = []
-
-def predict(request: TextRequest):
+def predict_controller(request):
     try:
         user_text = request.text
         src_lang = request.src_lang
         tgt_lang = request.tgt_lang
         logger.info(f"Texte reçu : {user_text}, Langue source : {src_lang}, Langue cible : {tgt_lang}")
 
-        translated_text = translate_text(user_text, src_lang=src_lang, tgt_lang=tgt_lang)
+        translated_text = translate_text(user_text, src_lang=src_lang, tgt_lang="eng")
         if not translated_text:
             raise ValueError("La traduction a échoué")
 
-        logger.info(f"Texte traduit : {translated_text}")
+        logger.info(f"Texte traduit en anglais pour la recherche : {translated_text}")
 
-        results = find_most_similar_labels(translated_text, embeddings, labels, tgt_lang=tgt_lang)
-        logger.info(f"Résultats de similarité : {results}")
+        results = find_most_similar_labels(translated_text, embeddings, labels, top_k=5)
+        
+        results_in_source_language = []
+        for res in results:
+            source_label = res["label"]
+            if src_lang != "eng":
+                translated_label = translate_text(source_label, src_lang="eng", tgt_lang=src_lang)
+                label_to_use = translated_label if translated_label else source_label
+            else:
+                label_to_use = source_label
+            
+            results_in_source_language.append({
+                "label": label_to_use,
+                "similarity": res["similarity"]
+            })
+
+        logger.info(f"Résultats de similarité : {results_in_source_language}")
+
+        display_translated_text = translate_text(user_text, src_lang=src_lang, tgt_lang=tgt_lang) if src_lang != tgt_lang else user_text
 
         data_list.append({
             "user_text": user_text,
-            "translated_text": translated_text,
-            "results": results
+            "translated_text": display_translated_text,
+            "results": results_in_source_language,
+            "src_lang": src_lang,
+            "tgt_lang": tgt_lang
         })
 
         return {
             "user_text": user_text,
-            "translated_text": translated_text,
-            "results": results
+            "translated_text": display_translated_text,
+            "results": results_in_source_language
         }
 
     except Exception as e:
         logger.error(f"Erreur dans la fonction predict : {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-def download_data():
+def download_data_controller():
     try:
-        with open("data.json", "w") as json_file:
-            json.dump(data_list, json_file, indent=4)
-
-        return FileResponse("data.json", filename="data.json", media_type="application/json")
-
+        return download_data()
     except Exception as e:
         logger.error(f"Erreur lors du téléchargement des données : {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-def clear_history():
-    global data_list
-    data_list.clear()
-    return {"message": "Historique effacé avec succès"}
+def clear_history_controller():
+    try:
+        return clear_history()
+    except Exception as e:
+        logger.error(f"Erreur lors de l'effacement de l'historique : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-def get_recent_predictions(limit: int = 5):
-    return {"recent_predictions": data_list[-limit:]}
-def get_last_prediction():
-    if data_list:
-        return {"last_prediction": data_list[-1]}
-    else:
-        return {"message": "Aucune prédiction n'a été faite"}
-def get_stats():
-    total_requests = len(data_list)
-    languages_used = set(item["src_lang"] for item in data_list) | set(item["tgt_lang"] for item in data_list)
-    return {
-        "total_requests": total_requests,
-        "languages_used": list(languages_used)
-    }
+def last_prediction_controller():
+    try:
+        return get_last_prediction()
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération de la dernière prédiction : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+def stats_controller():
+    try:
+        return get_stats()
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des statistiques : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+def supported_languages_controller():
+    return get_supported_languages()
