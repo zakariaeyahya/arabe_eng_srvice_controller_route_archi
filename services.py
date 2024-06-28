@@ -5,20 +5,20 @@ import re
 import torch
 from sklearn.metrics.pairwise import cosine_similarity
 import logging
-from fastapi import HTTPException
+import json
+from fastapi.responses import FileResponse
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# File paths
 combined_embeddings_file = r'D:\bureau\stage\exe 2\second try\combined_embeddings_all-mpnet-base-v2.csv'
 excel_file_path = r'd:\bureau\stage\exe 2\second try\classeur1.ods'
 
-# Load models
 model = SentenceTransformer('all-mpnet-base-v2')
 translation_model = AutoModelForSeq2SeqLM.from_pretrained("facebook/seamless-m4t-v2-large")
 processor = AutoTokenizer.from_pretrained("facebook/seamless-m4t-v2-large")
+
+data_list = []
 
 def clean_description(description):
     cleaned_text = description.lower()
@@ -31,6 +31,9 @@ def get_embedding(text):
     return embedding
 
 def translate_text(text, src_lang, tgt_lang):
+    if src_lang == tgt_lang:
+        return text
+    
     try:
         inputs = processor(text=text, src_lang=src_lang, return_tensors="pt")
         outputs = translation_model.generate(**inputs, tgt_lang=tgt_lang)
@@ -41,10 +44,7 @@ def translate_text(text, src_lang, tgt_lang):
         if isinstance(outputs, torch.Tensor):
             outputs = outputs.tolist()
         
-        if not isinstance(outputs, list):
-            return None
-        
-        if not outputs:
+        if not isinstance(outputs, list) or not outputs:
             return None
         
         if isinstance(outputs[0], list):
@@ -63,7 +63,7 @@ def translate_text(text, src_lang, tgt_lang):
         logger.error(f"Translation error: {e}")
         return None
 
-def find_most_similar_labels(user_input, embeddings, labels, tgt_lang, top_k=5):
+def find_most_similar_labels(user_input, embeddings, labels, top_k=5):
     user_embedding = get_embedding(user_input)
     similarities = cosine_similarity(user_embedding, embeddings)[0]
     indices = similarities.argsort()[::-1][:top_k]
@@ -71,9 +71,8 @@ def find_most_similar_labels(user_input, embeddings, labels, tgt_lang, top_k=5):
     results = []
     for idx in indices:
         label = labels[idx]
-        translated_label = translate_text(label, src_lang="eng", tgt_lang=tgt_lang)
         results.append({
-            "label": translated_label if translated_label else label,
+            "label": label,
             "similarity": float(similarities[idx])
         })
     
@@ -95,16 +94,44 @@ def load_embeddings_and_labels():
     except Exception as e:
         logger.error(f"Error loading embeddings or Excel file: {str(e)}")
         raise RuntimeError(f"Error loading embeddings or Excel file: {str(e)}")
-# services/stats_service.py
 
-
-def get_stats(data_list):
+def download_data():
     try:
-        total_requests = len(data_list)
-        languages_used = set(item["src_lang"] for item in data_list) | set(item["tgt_lang"] for item in data_list)
-        return {
-            "total_requests": total_requests,
-            "languages_used": list(languages_used)
-        }
+        with open("data.json", "w") as json_file:
+            json.dump(data_list, json_file, indent=4)
+        return FileResponse("data.json", filename="data.json", media_type="application/json")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Erreur lors du téléchargement des données : {e}")
+        raise Exception(f"Erreur lors du téléchargement des données : {e}")
+
+def clear_history():
+    global data_list
+    data_list.clear()
+    return {"message": "Historique effacé avec succès"}
+
+def get_last_prediction():
+    if data_list:
+        return {"last_prediction": data_list[-1]}
+    else:
+        return {"message": "Aucune prédiction n'a été faite"}
+
+def get_stats():
+    total_requests = len(data_list)
+    languages_used = set()
+    for item in data_list:
+        languages_used.add(item.get('src_lang', ''))
+        languages_used.add(item.get('tgt_lang', ''))
+    languages_used.discard('')
+    return {
+        "total_requests": total_requests,
+        "languages_used": list(languages_used)
+    }
+
+def get_supported_languages():
+    return {
+        "supported_languages": [
+            {"code": "fra", "name": "Français"},
+            {"code": "eng", "name": "Anglais"},
+            {"code": "arb", "name": "Arabe"}
+        ]
+    }
