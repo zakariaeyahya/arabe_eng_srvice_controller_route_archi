@@ -10,14 +10,11 @@ try:
 except Exception as e:
     raise RuntimeError("Erreur lors du chargement des embeddings ou du fichier Excel : " + str(e))
 
-def predict_controller(request):
+def predict_controller(text: str, src_lang: str, tgt_lang: str):
     try:
-        user_text = request.text
-        src_lang = request.src_lang
-        tgt_lang = request.tgt_lang
-        logger.info(f"Texte reçu : {user_text}, Langue source : {src_lang}, Langue cible : {tgt_lang}")
+        logger.info(f"Texte reçu : {text}, Langue source : {src_lang}, Langue cible : {tgt_lang}")
 
-        translated_text = translate_text(user_text, src_lang=src_lang, tgt_lang="eng")
+        translated_text = translate_text(text, src_lang=src_lang, tgt_lang="eng")
         if not translated_text:
             raise ValueError("La traduction a échoué")
 
@@ -41,10 +38,10 @@ def predict_controller(request):
 
         logger.info(f"Résultats de similarité : {results_in_source_language}")
 
-        display_translated_text = translate_text(user_text, src_lang=src_lang, tgt_lang=tgt_lang) if src_lang != tgt_lang else user_text
+        display_translated_text = translate_text(text, src_lang=src_lang, tgt_lang=tgt_lang) if src_lang != tgt_lang else text
 
         data_list.append({
-            "user_text": user_text,
+            "user_text": text,
             "translated_text": display_translated_text,
             "results": results_in_source_language,
             "src_lang": src_lang,
@@ -52,7 +49,7 @@ def predict_controller(request):
         })
 
         return {
-            "user_text": user_text,
+            "user_text": text,
             "translated_text": display_translated_text,
             "results": results_in_source_language
         }
